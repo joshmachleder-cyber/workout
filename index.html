@@ -121,6 +121,17 @@
   }
   nav a.on{color:var(--accent)}
   .empty{text-align:center;color:var(--dim);padding:60px 20px}
+  .errbox{
+    background:var(--panel);border:1px solid #4a2226;border-radius:12px;
+    padding:18px;font-size:15px;line-height:1.6;
+  }
+  .errtitle{color:#f85149;font-weight:750;margin-bottom:10px;font-size:16px}
+  .errbox b{color:var(--text)}
+  .errhint{
+    margin-top:14px;padding-top:12px;border-top:1px solid var(--line);
+    color:var(--dim);font-size:12px;word-break:break-all;
+  }
+  .errbox code{background:var(--panel2);padding:2px 5px;border-radius:4px;font-size:11px}
 </style>
 </head>
 <body>
@@ -137,15 +148,45 @@
   <a href="history.html">History</a>
 </nav>
 
+<script src="data.js"></script>
 <script src="app.js"></script>
 <script>
 let STATE, LIB, TPL;
 
-async function boot(){
-  [LIB, TPL] = await Promise.all([
-    fetch('data/exercises.json').then(r=>r.json()),
-    fetch('data/templates.json').then(r=>r.json())
-  ]);
+function showError(msg){
+  document.getElementById('dayTitle').textContent = 'Setup needed';
+  document.getElementById('daySub').textContent = 'One file did not upload';
+  document.getElementById('app').innerHTML =
+    `<div class="errbox">
+       <div class="errtitle">⚠ data.js is missing</div>
+       <div>${msg}</div>
+       <div class="errhint">Current address:<br><code>${location.href}</code></div>
+       <button class="ghost" style="margin-top:14px" onclick="hardReset()">Clear cache &amp; retry</button>
+     </div>`;
+}
+
+async function hardReset(){
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if(window.caches){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  }catch(e){}
+  location.reload(true);
+}
+
+function boot(){
+  if(typeof window.EXERCISES === 'undefined' || typeof window.TEMPLATES === 'undefined'){
+    showError('Upload <b>data.js</b> to your repository, in the same place as index.html. It sits alongside the other files, not in a folder.');
+    return;
+  }
+
+  LIB = window.EXERCISES;
+  TPL = window.TEMPLATES;
   STATE = WorkoutEngine.loadState();
 
   const today = new Date().toISOString().slice(0,10);

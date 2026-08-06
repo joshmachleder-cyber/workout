@@ -64,6 +64,7 @@
   <a href="history.html" class="on">History</a>
 </nav>
 
+<script src="data.js"></script>
 <script src="app.js"></script>
 <script>
 const STATE = WorkoutEngine.loadState();
@@ -126,16 +127,15 @@ function controls(){
 }
 
 function bind(){
-  document.getElementById('seed').onclick = async ()=>{
-    if(STATE.sessions.length && !confirm('This replaces what is already logged. Continue?')) return;
-    try{
-      const data = await fetch('data/seed.json').then(r=>r.json());
-      WorkoutEngine.saveState(Object.assign(WorkoutEngine.loadState(), data));
-      alert('Loaded. Your last 3 sessions are in, and the Today tab is set to Arms.');
-      location.reload();
-    }catch(err){
-      alert('Could not load: ' + err.message);
+  document.getElementById('seed').onclick = ()=>{
+    if(typeof window.SEED === 'undefined'){
+      alert('Could not load.\n\ndata.js is missing from your site. Upload it alongside index.html.');
+      return;
     }
+    if(STATE.sessions.length && !confirm('This replaces what is already logged. Continue?')) return;
+    WorkoutEngine.saveState(Object.assign(WorkoutEngine.loadState(), window.SEED));
+    alert('Loaded. Your last 3 sessions are in, and the Today tab is set to Arms.');
+    location.reload();
   };
   document.getElementById('exp').onclick = ()=>WorkoutEngine.exportData(STATE);
   document.getElementById('imp').onclick = ()=>document.getElementById('file').click();

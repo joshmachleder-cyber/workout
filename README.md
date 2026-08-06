@@ -9,7 +9,7 @@ Runs entirely in the browser. No backend, no API keys, no accounts, no cost.
 ## Deploy to GitHub Pages
 
 1. Create a new **public** repo on GitHub (Pages requires public on a free account).
-2. Upload every file in this folder, keeping the `data/` folder intact.
+2. Upload every file in this folder. There are no subfolders, so just select all of them and drag.
 3. Go to **Settings > Pages**.
 4. Under "Build and deployment", set Source to **Deploy from a branch**, branch `main`, folder `/ (root)`. Save.
 5. Wait a minute or two, then open `https://YOURNAME.github.io/REPONAME/`.
@@ -18,7 +18,7 @@ On your phone, open that URL in Safari or Chrome and choose **Add to Home Screen
 
 ## Load your training history
 
-Open the **History** tab, tap **Import history**, and select `data/seed.json`. That loads your last three sessions (Legs Jun 25, Arms Jun 29, Chest Jul 2), so the app opens knowing:
+Open the **History** tab and tap **Load my past workouts**. That loads your last three sessions (Legs Jun 25, Arms Jun 29, Chest Jul 2), so the app opens knowing:
 
 - You are due for **Arms**
 - Your right shoulder was **sore** last session, so pressing is filtered accordingly
@@ -58,15 +58,16 @@ This is a hard filter. If a block cannot be filled with safe movements, the bloc
 index.html            Today screen: panels, set bubbles, session log
 history.html          Session history, top loads, export and import
 app.js                Rotation, selection, shoulder gate, overload math
-data/exercises.json   Exercise library, tagged by slot and shoulder safety
-data/templates.json   Day templates and block orderings
-data/seed.json        Your existing training history
+data.js               Exercise library, day templates, and your past sessions
 manifest.json, sw.js  PWA install and offline support
+icon-192.png, icon-512.png
 ```
+
+Every file sits at the top level. There are no folders. If you ever re-upload, drag all of these in together.
 
 ## Adding exercises
 
-Append to the right day array in `data/exercises.json`:
+Open `data.js` on github.com, click the pencil icon to edit, and append to the right day array inside `window.EXERCISES`:
 
 ```json
 {
