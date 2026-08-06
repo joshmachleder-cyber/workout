@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<link rel="manifest" href="manifest.json">
+<title>History</title>
+<style>
+  :root{
+    --bg:#0d1117;--panel:#161b22;--panel2:#1c2129;--line:#2b3341;
+    --text:#e6edf3;--dim:#8b949e;--accent:#f78166;--good:#3fb950;--blue:#58a6ff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);padding:0 0 96px;
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  header{position:sticky;top:0;z-index:20;background:rgba(13,17,23,.92);
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
+    padding:calc(14px + env(safe-area-inset-top)) 16px 14px}
+  h1{margin:0;font-size:26px;letter-spacing:-.5px}
+  main{padding:16px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:22px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:14px;text-align:center}
+  .stat .n{font-size:26px;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+  .stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;margin-top:3px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);
+    margin:24px 0 10px;display:flex;align-items:center;gap:8px}
+  h2::after{content:"";flex:1;height:1px;background:var(--line)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:14px;margin-bottom:9px}
+  .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .d{font-weight:700}
+  .m{color:var(--dim);font-size:13px}
+  .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;
+    background:var(--panel2);border:1px solid var(--line);color:var(--dim)}
+  .notes{margin-top:9px;font-size:14px;color:var(--dim);border-top:1px solid var(--line);
+    padding-top:9px}
+  .pr{display:flex;justify-content:space-between;padding:9px 0;
+    border-bottom:1px solid var(--line);font-size:15px}
+  .pr:last-child{border:0}
+  .pr b{color:var(--good);font-variant-numeric:tabular-nums}
+  button{width:100%;padding:13px;border-radius:10px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--text);font-size:15px;font-weight:650;
+    cursor:pointer;margin-top:9px}
+  button.danger{color:#f85149;border-color:#4a2226}
+  .empty{text-align:center;color:var(--dim);padding:50px 20px}
+  nav{position:fixed;bottom:0;left:0;right:0;background:rgba(13,17,23,.95);
+    backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;
+    padding-bottom:env(safe-area-inset-bottom)}
+  nav a{flex:1;text-align:center;padding:13px 0;color:var(--dim);
+    text-decoration:none;font-size:12px;font-weight:650}
+  nav a.on{color:var(--accent)}
+  input[type=file]{display:none}
+</style>
+</head>
+<body>
+
+<header><h1>History</h1></header>
+<main id="app"></main>
+
+<nav>
+  <a href="index.html">Today</a>
+  <a href="history.html" class="on">History</a>
+</nav>
+
+<script src="app.js"></script>
+<script>
+const STATE = WorkoutEngine.loadState();
+const stats = WorkoutEngine.computeStats(STATE);
+
+const dayLabels = {chest:'Chest',arms:'Arms',legs:'Legs'};
+
+function render(){
+  const app = document.getElementById('app');
+
+  if(!STATE.sessions.length){
+    app.innerHTML = `<div class="empty">No sessions logged yet.<br>Finish one on the Today tab and it lands here.</div>
+      ${controls()}`;
+    bind();
+    return;
+  }
+
+  const sessions = [...STATE.sessions].reverse();
+
+  const prs = Object.values(stats.byExercise)
+    .sort((a,b)=>b.best-a.best)
+    .slice(0,15)
+    .map(e=>`<div class="pr"><span>${e.name}</span><b>${e.best} lb</b></div>`).join('');
+
+  app.innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="n">${stats.totalSessions}</div><div class="l">Sessions</div></div>
+      <div class="stat"><div class="n">${stats.avgRating}</div><div class="l">Avg Rating</div></div>
+      <div class="stat"><div class="n">${Object.keys(stats.byExercise).length}</div><div class="l">Lifts Tracked</div></div>
+    </div>
+
+    <h2>Top Loads</h2>
+    <div class="card">${prs || '<div class="m">Log some weights to see PRs.</div>'}</div>
+
+    <h2>Sessions</h2>
+    ${sessions.map(s=>`
+      <div class="card">
+        <div class="row">
+          <div class="d">${dayLabels[s.dayType]||s.dayType} <span class="tag">${s.variantName||''}</span></div>
+          <div class="m">${s.date}</div>
+        </div>
+        <div class="m" style="margin-top:5px">
+          ${s.rating||'?'}/5 · energy ${s.energy||'?'} · shoulder ${s.shoulder||'?'} · ${(s.exercises||[]).length} exercises
+        </div>
+        ${s.notes?`<div class="notes">${s.notes}</div>`:''}
+      </div>`).join('')}
+
+    ${controls()}`;
+  bind();
+}
+
+function controls(){
+  return `
+    <h2>Data</h2>
+    <button id="exp">Export history (JSON)</button>
+    <button id="seed">⬇ Load my past workouts (one tap)</button>
+    <button id="imp">Import history from a file</button>
+    <input type="file" id="file" accept="application/json">
+    <button class="danger" id="wipe">Erase all data</button>`;
+}
+
+function bind(){
+  document.getElementById('seed').onclick = async ()=>{
+    if(STATE.sessions.length && !confirm('This replaces what is already logged. Continue?')) return;
+    try{
+      const data = await fetch('data/seed.json').then(r=>r.json());
+      WorkoutEngine.saveState(Object.assign(WorkoutEngine.loadState(), data));
+      alert('Loaded. Your last 3 sessions are in, and the Today tab is set to Arms.');
+      location.reload();
+    }catch(err){
+      alert('Could not load: ' + err.message);
+    }
+  };
+  document.getElementById('exp').onclick = ()=>WorkoutEngine.exportData(STATE);
+  document.getElementById('imp').onclick = ()=>document.getElementById('file').click();
+  document.getElementById('file').onchange = e=>{
+    if(e.target.files[0]) WorkoutEngine.importData(e.target.files[0], ()=>location.reload());
+  };
+  document.getElementById('wipe').onclick = ()=>{
+    if(confirm('Erase everything? Export first if you want a backup.')){
+      localStorage.clear(); location.reload();
+    }
+  };
+}
+
+render();
+</script>
+</body>
+</html>

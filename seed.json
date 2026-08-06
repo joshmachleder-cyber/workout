@@ -1,0 +1,85 @@
+{
+  "_notes": "Your last three logged sessions. Import this on the History tab and the app starts knowing you are due for Arms, with real overload targets. Pointer sits at 'chest' (last completed Jul 2), so the next generated day is Arms.",
+  "pointer": "chest",
+  "lastVariant": { "chest": "chest-A", "arms": "arms-A", "legs": "legs-A" },
+  "seenVideos": [
+    "inc-db-curl","ez-bar-curl","hammer-curl","preacher-machine","cgbp","overhead-db-ext",
+    "tate-press","wrist-curl","reverse-wrist-curl","farmers-walk","tricep-pushdown","bench-dips",
+    "inc-db-press","neutral-flat-db","db-floor-press","decline-db-press","cable-crossover-lth",
+    "pec-deck","db-pullover","pushup-finisher","goblet-squat-heel","tempo-squat","barbell-rdl",
+    "leg-press-bilateral","leg-press-single-r","leg-press-single-l","bulgarian-split-squat",
+    "nordic-curl","leg-extension","leg-curl","hip-adductor","hip-abductor","seated-calf-raise"
+  ],
+  "current": null,
+  "sessions": [
+    {
+      "date": "2026-06-25",
+      "dayType": "legs",
+      "variantId": "legs-A",
+      "variantName": "Squat Lead",
+      "rating": "4",
+      "shoulder": "good",
+      "energy": "moderate",
+      "notes": "Solid. Want more intensity next legs day.",
+      "exercises": [
+        { "id": "goblet-squat-heel", "name": "Heel-Elevated Goblet Squat", "loggedWeight": "70", "loggedReps": "12" },
+        { "id": "tempo-squat", "name": "Barbell Tempo Squat", "loggedWeight": "225", "loggedReps": "8" },
+        { "id": "barbell-rdl", "name": "Barbell RDL", "loggedWeight": "165", "loggedReps": "10" },
+        { "id": "leg-press-bilateral", "name": "Leg Press (Bilateral)", "loggedWeight": "360", "loggedReps": "12" },
+        { "id": "leg-press-single-r", "name": "Single-Leg Press (Right)", "loggedWeight": "180", "loggedReps": "12" },
+        { "id": "leg-press-single-l", "name": "Single-Leg Press (Left)", "loggedWeight": "180", "loggedReps": "12" },
+        { "id": "bulgarian-split-squat", "name": "Bulgarian Split Squat", "loggedWeight": "47.5", "loggedReps": "10" },
+        { "id": "nordic-curl", "name": "Nordic Curl", "loggedWeight": "", "loggedReps": "8" },
+        { "id": "leg-extension", "name": "Leg Extension", "loggedWeight": "130", "loggedReps": "15" },
+        { "id": "leg-curl", "name": "Leg Curl", "loggedWeight": "110", "loggedReps": "15" },
+        { "id": "hip-adductor", "name": "Hip Adductor Machine", "loggedWeight": "120", "loggedReps": "15" },
+        { "id": "hip-abductor", "name": "Hip Abductor Machine", "loggedWeight": "120", "loggedReps": "15" },
+        { "id": "seated-calf-raise", "name": "Seated Calf Raise", "loggedWeight": "115", "loggedReps": "20" }
+      ]
+    },
+    {
+      "date": "2026-06-29",
+      "dayType": "arms",
+      "variantId": "arms-A",
+      "variantName": "Bicep Front-Load",
+      "rating": "5",
+      "shoulder": "minor",
+      "energy": "high",
+      "notes": "Great session. Right shoulder minor discomfort, keep overhead extension conservative.",
+      "exercises": [
+        { "id": "ez-bar-curl", "name": "EZ Bar Curl", "loggedWeight": "75", "loggedReps": "8" },
+        { "id": "inc-db-curl", "name": "Seated Incline DB Curl", "loggedWeight": "27.5", "loggedReps": "10" },
+        { "id": "hammer-curl", "name": "Hammer Curl", "loggedWeight": "35", "loggedReps": "10" },
+        { "id": "preacher-machine", "name": "Preacher Curl Machine", "loggedWeight": "85", "loggedReps": "12" },
+        { "id": "cgbp", "name": "Close-Grip Bench Press", "loggedWeight": "155", "loggedReps": "10" },
+        { "id": "overhead-db-ext", "name": "Overhead DB Extension", "loggedWeight": "40", "loggedReps": "12" },
+        { "id": "tate-press", "name": "Tate Press", "loggedWeight": "25", "loggedReps": "12" },
+        { "id": "wrist-curl", "name": "Wrist Curl", "loggedWeight": "35", "loggedReps": "20" },
+        { "id": "reverse-wrist-curl", "name": "Reverse Wrist Curl", "loggedWeight": "20", "loggedReps": "20" },
+        { "id": "farmers-walk", "name": "Farmer's Walk", "loggedWeight": "80", "loggedReps": "60" },
+        { "id": "tricep-pushdown", "name": "Tricep Pushdown", "loggedWeight": "70", "loggedReps": "15" },
+        { "id": "bench-dips", "name": "Bench Dips (small ROM)", "loggedWeight": "", "loggedReps": "15" }
+      ]
+    },
+    {
+      "date": "2026-07-02",
+      "dayType": "chest",
+      "variantId": "chest-A",
+      "variantName": "Incline Priority",
+      "rating": "4",
+      "shoulder": "sore",
+      "energy": "high",
+      "notes": "Right shoulder sore. Watch pressing volume and load next chest day. Swap in something new.",
+      "exercises": [
+        { "id": "inc-db-press", "name": "Incline Dumbbell Press", "loggedWeight": "65", "loggedReps": "10" },
+        { "id": "neutral-flat-db", "name": "Neutral-Grip Flat DB Press", "loggedWeight": "60", "loggedReps": "10" },
+        { "id": "db-floor-press", "name": "DB Floor Press", "loggedWeight": "65", "loggedReps": "10" },
+        { "id": "decline-db-press", "name": "Decline DB Press", "loggedWeight": "60", "loggedReps": "10" },
+        { "id": "cable-crossover-lth", "name": "Cable Crossover Low-to-High", "loggedWeight": "35", "loggedReps": "15" },
+        { "id": "pec-deck", "name": "Pec Deck", "loggedWeight": "115", "loggedReps": "15" },
+        { "id": "db-pullover", "name": "DB Pullover", "loggedWeight": "50", "loggedReps": "15" },
+        { "id": "pushup-finisher", "name": "Push-Ups", "loggedWeight": "", "loggedReps": "18" }
+      ]
+    }
+  ]
+}

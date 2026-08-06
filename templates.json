@@ -1,0 +1,186 @@
+{
+  "_notes": "Each day has multiple 'variants' = different block orders. The generator picks a variant it did not use last time for that day, so structure never repeats back to back. 'pick' = how many exercises to draw from that slot.",
+
+  "weekSchedule": {
+    "0": "legs",
+    "1": "chest",
+    "2": "arms",
+    "3": "legs",
+    "4": "chest",
+    "5": "arms",
+    "6": "chest"
+  },
+
+  "rotationOrder": ["chest", "arms", "legs"],
+
+  "chest": {
+    "label": "Chest",
+    "variants": [
+      {
+        "id": "chest-A",
+        "name": "Incline Priority",
+        "blocks": [
+          { "slot": "incline", "pick": 2, "label": "Incline Block" },
+          { "slot": "flat", "pick": 2, "label": "Flat / Decline Block" },
+          { "slot": "isolation", "pick": 3, "label": "Isolation & Fly" },
+          { "slot": "finisher", "pick": 1, "label": "Explosive Finisher" }
+        ]
+      },
+      {
+        "id": "chest-B",
+        "name": "Flat Lead into Incline",
+        "blocks": [
+          { "slot": "flat", "pick": 1, "label": "Flat Opener" },
+          { "slot": "incline", "pick": 2, "label": "Incline Block" },
+          { "slot": "flat", "pick": 1, "label": "Second Flat Movement" },
+          { "slot": "isolation", "pick": 3, "label": "Isolation & Fly" },
+          { "slot": "finisher", "pick": 1, "label": "Explosive Finisher" }
+        ]
+      },
+      {
+        "id": "chest-C",
+        "name": "Pre-Exhaust",
+        "blocks": [
+          { "slot": "isolation", "pick": 1, "label": "Pre-Exhaust Fly" },
+          { "slot": "incline", "pick": 2, "label": "Incline Block" },
+          { "slot": "flat", "pick": 2, "label": "Flat / Decline Block" },
+          { "slot": "isolation", "pick": 2, "label": "Isolation Finish" },
+          { "slot": "finisher", "pick": 1, "label": "Explosive Finisher" }
+        ]
+      },
+      {
+        "id": "chest-D",
+        "name": "Heavy Top, Volume Bottom",
+        "blocks": [
+          { "slot": "incline", "pick": 1, "label": "Heavy Incline" },
+          { "slot": "flat", "pick": 2, "label": "Flat / Decline Volume" },
+          { "slot": "incline", "pick": 1, "label": "Second Incline Angle" },
+          { "slot": "isolation", "pick": 3, "label": "Isolation & Fly" },
+          { "slot": "finisher", "pick": 1, "label": "Explosive Finisher" }
+        ]
+      }
+    ]
+  },
+
+  "arms": {
+    "label": "Arms",
+    "variants": [
+      {
+        "id": "arms-A",
+        "name": "Bicep Front-Load",
+        "blocks": [
+          { "slot": "biceps-primary", "pick": 2, "label": "Primary Biceps" },
+          { "slot": "biceps-secondary", "pick": 2, "label": "Secondary Biceps" },
+          { "slot": "triceps-compound", "pick": 1, "label": "Tricep Compound", "superset": true },
+          { "slot": "triceps-superset", "pick": 1, "label": "Superset Partner", "superset": true },
+          { "slot": "forearms", "pick": 3, "label": "Forearms & Grip" },
+          { "slot": "triceps-finisher", "pick": 2, "label": "Tricep Finisher" }
+        ]
+      },
+      {
+        "id": "arms-B",
+        "name": "Alternating Antagonist",
+        "blocks": [
+          { "slot": "biceps-primary", "pick": 1, "label": "Primary Biceps" },
+          { "slot": "triceps-compound", "pick": 1, "label": "Tricep Compound", "superset": true },
+          { "slot": "triceps-superset", "pick": 1, "label": "Superset Partner", "superset": true },
+          { "slot": "biceps-primary", "pick": 1, "label": "Second Primary Curl" },
+          { "slot": "biceps-secondary", "pick": 2, "label": "Secondary Biceps" },
+          { "slot": "triceps-finisher", "pick": 2, "label": "Tricep Finisher" },
+          { "slot": "forearms", "pick": 3, "label": "Forearms & Grip" }
+        ]
+      },
+      {
+        "id": "arms-C",
+        "name": "Grip First",
+        "blocks": [
+          { "slot": "forearms", "pick": 2, "label": "Forearm Primer" },
+          { "slot": "biceps-primary", "pick": 2, "label": "Primary Biceps" },
+          { "slot": "biceps-secondary", "pick": 2, "label": "Secondary Biceps" },
+          { "slot": "triceps-compound", "pick": 1, "label": "Tricep Compound", "superset": true },
+          { "slot": "triceps-superset", "pick": 1, "label": "Superset Partner", "superset": true },
+          { "slot": "triceps-finisher", "pick": 2, "label": "Tricep Finisher" },
+          { "slot": "forearms", "pick": 1, "label": "Grip Finisher" }
+        ]
+      },
+      {
+        "id": "arms-D",
+        "name": "Tricep Emphasis",
+        "blocks": [
+          { "slot": "triceps-compound", "pick": 2, "label": "Tricep Compounds" },
+          { "slot": "biceps-primary", "pick": 2, "label": "Primary Biceps" },
+          { "slot": "triceps-superset", "pick": 1, "label": "Overhead Tricep (conservative)" },
+          { "slot": "biceps-secondary", "pick": 2, "label": "Secondary Biceps" },
+          { "slot": "forearms", "pick": 3, "label": "Forearms & Grip" },
+          { "slot": "triceps-finisher", "pick": 2, "label": "Tricep Finisher" }
+        ]
+      }
+    ]
+  },
+
+  "legs": {
+    "label": "Legs",
+    "variants": [
+      {
+        "id": "legs-A",
+        "name": "Squat Lead",
+        "blocks": [
+          { "slot": "compound-primary", "pick": 2, "label": "Squat Block" },
+          { "slot": "compound-hinge", "pick": 1, "label": "Hinge" },
+          { "slot": "legpress-bilateral", "pick": 1, "label": "Leg Press Bilateral" },
+          { "slot": "legpress-right", "pick": 1, "label": "Leg Press Right" },
+          { "slot": "legpress-left", "pick": 1, "label": "Leg Press Left" },
+          { "slot": "unilateral-mandatory", "pick": 1, "label": "Bulgarian Split Squats" },
+          { "slot": "accessory", "pick": 1, "label": "Accessory" },
+          { "slot": "machine-block", "pick": 4, "label": "Machine Isolation Block" },
+          { "slot": "calves", "pick": 1, "label": "Calves" }
+        ]
+      },
+      {
+        "id": "legs-B",
+        "name": "Hinge Lead",
+        "blocks": [
+          { "slot": "compound-hinge", "pick": 2, "label": "Hinge Block" },
+          { "slot": "compound-primary", "pick": 1, "label": "Squat" },
+          { "slot": "unilateral-mandatory", "pick": 1, "label": "Bulgarian Split Squats" },
+          { "slot": "legpress-bilateral", "pick": 1, "label": "Leg Press Bilateral" },
+          { "slot": "legpress-right", "pick": 1, "label": "Leg Press Right" },
+          { "slot": "legpress-left", "pick": 1, "label": "Leg Press Left" },
+          { "slot": "accessory", "pick": 1, "label": "Accessory" },
+          { "slot": "machine-block", "pick": 4, "label": "Machine Isolation Block" },
+          { "slot": "calves", "pick": 1, "label": "Calves" }
+        ]
+      },
+      {
+        "id": "legs-C",
+        "name": "Unilateral Emphasis",
+        "blocks": [
+          { "slot": "compound-primary", "pick": 1, "label": "Squat" },
+          { "slot": "unilateral-mandatory", "pick": 1, "label": "Bulgarian Split Squats" },
+          { "slot": "accessory", "pick": 2, "label": "Unilateral Accessory" },
+          { "slot": "compound-hinge", "pick": 1, "label": "Hinge" },
+          { "slot": "legpress-bilateral", "pick": 1, "label": "Leg Press Bilateral" },
+          { "slot": "legpress-right", "pick": 1, "label": "Leg Press Right" },
+          { "slot": "legpress-left", "pick": 1, "label": "Leg Press Left" },
+          { "slot": "machine-block", "pick": 4, "label": "Machine Isolation Block" },
+          { "slot": "calves", "pick": 1, "label": "Calves" }
+        ]
+      },
+      {
+        "id": "legs-D",
+        "name": "Press Lead",
+        "blocks": [
+          { "slot": "legpress-bilateral", "pick": 1, "label": "Leg Press Bilateral" },
+          { "slot": "legpress-right", "pick": 1, "label": "Leg Press Right" },
+          { "slot": "legpress-left", "pick": 1, "label": "Leg Press Left" },
+          { "slot": "compound-primary", "pick": 2, "label": "Squat Block" },
+          { "slot": "compound-hinge", "pick": 1, "label": "Hinge" },
+          { "slot": "unilateral-mandatory", "pick": 1, "label": "Bulgarian Split Squats" },
+          { "slot": "machine-block", "pick": 4, "label": "Machine Isolation Block" },
+          { "slot": "accessory", "pick": 1, "label": "Accessory" },
+          { "slot": "calves", "pick": 1, "label": "Calves" }
+        ]
+      }
+    ]
+  }
+}
