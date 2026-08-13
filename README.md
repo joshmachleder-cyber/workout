@@ -36,7 +36,9 @@ Skip the import if you would rather start clean.
 
 **Exercise selection.** Every movement is scored by how many sessions have passed since you last did it. Longest gap wins, with a small random tiebreak. Favorited exercises (♥ on any exercise card) get a scoring nudge. Avoided exercises (🚫) are hard-excluded until you undo it from Settings. New movements surface naturally, and a demo video link appears the first time an exercise comes up.
 
-**Landing screen.** Before generating a new day, the app asks two quick questions: what equipment you have (Full Gym / Home / Bodyweight Only, one tap), and how you feel (Fresh / Tired / Rough). Both apply immediately to that day's generation.
+**Landing screen.** Before generating a new day, the app asks three quick questions: what equipment you have (Full Gym / Home / Bodyweight Only), how much time you have (30/45/60/75/90 min or no limit), and how you feel (Fresh / Tired / Rough). All three apply immediately to that day's generation.
+
+**Time budget.** Picking a time limit first scales every exercise's sets down toward that budget (floor of 2 sets each). If it's still over after that, optional exercises get dropped entirely, last block first. Legs-day non-negotiables (split squats, the full leg press sequence, all four machines) are never dropped, only shrunk — so a very tight legs-day budget will still run a bit long, on purpose. The Today screen shows the estimated time next to your target.
 
 **Equipment.** The three landing-screen presets cover the common cases. For finer control, the Settings tab has a toggle per equipment type (barbell, dumbbells, cables, machine, bands, ez-bar, bodyweight). Whatever you turn off, the generator filters out of the pool before picking — same hard-filter pattern as the shoulder gate, so a block shrinks rather than substituting something unavailable.
 

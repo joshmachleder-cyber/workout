@@ -17,7 +17,8 @@ const DEFAULT_STATE = {
     barbell: true, dumbbells: true, cables: true, machine: true,
     bands: true, 'ez-bar': true, bodyweight: true
   },
-  preferences: { favorites: [], avoided: [] } // exercise ids
+  preferences: { favorites: [], avoided: [] }, // exercise ids
+  timeBudget: null       // minutes available today. null = no limit.
 };
 
 // GitHub token/gist id live in their own key so they never ride along
@@ -38,6 +39,62 @@ const EQUIPMENT_PRESETS = {
   home:    { label: 'Home / Limited', equipment: { barbell: false, dumbbells: true, cables: false, machine: false, bands: true, 'ez-bar': false, bodyweight: true } },
   minimal: { label: 'Bodyweight Only',equipment: { barbell: false, dumbbells: false,cables: false, machine: false, bands: true, 'ez-bar': false, bodyweight: true } }
 };
+
+/* ---------- time budget ---------- */
+/* Legs-day non-negotiables (split squats, full leg press sequence, all
+   four machines) are never removed to hit a time budget, only shrunk in
+   set count like everything else. Everything else can be dropped. */
+
+const PROTECTED_SLOTS = new Set(['unilateral-mandatory', 'legpress-bilateral', 'legpress-right', 'legpress-left', 'machine-block']);
+const SET_MINUTES = { heavy: 3, moderate: 2, light: 1.5 };
+
+function setTimeTier(repRange) {
+  const top = parseInt(String(repRange).split('-')[1], 10) || 12;
+  if (top <= 8) return 'heavy';
+  if (top <= 12) return 'moderate';
+  return 'light';
+}
+
+function exerciseSetCount(ex) {
+  return ex.sets + (ex.unilateralSplit ? 6 : 0);
+}
+
+function exerciseMinutes(ex) {
+  return exerciseSetCount(ex) * SET_MINUTES[setTimeTier(ex.repRange)];
+}
+
+function sessionMinutes(blocks) {
+  return blocks.reduce((sum, b) => sum + b.exercises.reduce((s, e) => s + exerciseMinutes(e), 0), 0);
+}
+
+function trimToTimeBudget(blocks, budgetMinutes) {
+  if (!budgetMinutes) return blocks;
+  let total = sessionMinutes(blocks);
+  if (total <= budgetMinutes) return blocks;
+
+  // Stage 1: scale every exercise's sets toward the budget, floor of 2.
+  // Non-negotiable blocks shrink here too, same as everything else.
+  const scale = Math.max(0.3, budgetMinutes / total);
+  blocks.forEach(b => {
+    b.exercises.forEach(e => { e.sets = Math.max(2, Math.round(e.sets * scale)); });
+  });
+
+  total = sessionMinutes(blocks);
+  if (total <= budgetMinutes) return blocks;
+
+  // Stage 2: sets are already at the floor and it's still over budget.
+  // Drop optional exercises entirely, last block first. Non-negotiable
+  // blocks are skipped here, never emptied.
+  for (let i = blocks.length - 1; i >= 0 && total > budgetMinutes; i--) {
+    const b = blocks[i];
+    if (PROTECTED_SLOTS.has(b.slot)) continue;
+    while (b.exercises.length && total > budgetMinutes) {
+      total -= exerciseMinutes(b.exercises.pop());
+    }
+  }
+
+  return blocks.filter(b => b.exercises.length > 0);
+}
 
 function loadState() {
   try {
@@ -218,7 +275,7 @@ function pickVariant(dayType, state, templates) {
 
 /* ---------- the generator ---------- */
 
-function generateSession(state, library, templates, forcedDay, readiness) {
+function generateSession(state, library, templates, forcedDay, readiness, timeBudgetMinutes) {
   const dayType = forcedDay || nextDayType(state, templates);
   const variant = pickVariant(dayType, state, templates);
   const status = shoulderStatus(state);
@@ -241,6 +298,7 @@ function generateSession(state, library, templates, forcedDay, readiness) {
 
     blocks.push({
       label: block.label,
+      slot: block.slot,
       superset: !!block.superset,
       exercises: picks.map(ex => {
         const prev = lastPerformance(state, ex.id);
@@ -266,6 +324,8 @@ function generateSession(state, library, templates, forcedDay, readiness) {
     });
   }
 
+  const trimmedBlocks = trimToTimeBudget(blocks, timeBudgetMinutes);
+
   return {
     date: new Date().toISOString().slice(0, 10),
     dayType,
@@ -273,8 +333,10 @@ function generateSession(state, library, templates, forcedDay, readiness) {
     variantName: variant.name,
     shoulderCarry: status,
     readiness: READINESS_LEVELS[readiness] ? readiness : 'fresh',
-    blocks,
-    exercises: blocks.flatMap(b => b.exercises)
+    timeBudget: timeBudgetMinutes || null,
+    estimatedMinutes: Math.round(sessionMinutes(trimmedBlocks)),
+    blocks: trimmedBlocks,
+    exercises: trimmedBlocks.flatMap(b => b.exercises)
   };
 }
 
@@ -335,6 +397,12 @@ function toggleAvoided(state, id) {
 function setEquipment(state, type, enabled) {
   state.equipment = state.equipment || structuredClone(DEFAULT_STATE.equipment);
   state.equipment[type] = enabled;
+  saveState(state);
+  return state;
+}
+
+function setTimeBudget(state, minutes) {
+  state.timeBudget = minutes || null;
   saveState(state);
   return state;
 }
@@ -480,7 +548,7 @@ window.WorkoutEngine = {
   exportData, importData, computeStats, nextDayType,
   lastSessionOfType, shoulderStatus,
   toggleFavorite, toggleAvoided, setEquipment,
-  setEquipmentPreset, matchingEquipmentPreset,
+  setEquipmentPreset, matchingEquipmentPreset, setTimeBudget,
   loadGistConfig, saveGistConfig, pushToGist, pullFromGist,
   READINESS_LEVELS, EQUIPMENT_PRESETS
 };

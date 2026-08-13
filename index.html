@@ -233,6 +233,8 @@ function renderReadinessPrompt(){
 
   const activePreset = WorkoutEngine.matchingEquipmentPreset(STATE);
   const presets = WorkoutEngine.EQUIPMENT_PRESETS;
+  const timeOptions = [30, 45, 60, 75, 90];
+  const activeTime = STATE.timeBudget || 0;
 
   document.getElementById('app').innerHTML = `
     <div class="logform">
@@ -242,6 +244,15 @@ function renderReadinessPrompt(){
       </div>
       <div class="m" style="color:var(--dim);font-size:12px;margin-top:8px">
         Need finer control? Toggle individual equipment types in <a class="vid" style="margin:0" href="settings.html">Settings</a>.
+      </div>
+
+      <h3 style="margin-top:22px">How much time do you have?</h3>
+      <div class="opts" id="timeOpts">
+        ${timeOptions.map(m=>`<div class="opt${activeTime===m?' sel':''}" data-v="${m}">${m} min</div>`).join('')}
+        <div class="opt${activeTime===0?' sel':''}" data-v="0">No limit</div>
+      </div>
+      <div class="m" style="color:var(--dim);font-size:12px;margin-top:8px">
+        Tight on time trims sets first, then drops optional exercises. Legs-day non-negotiables always stay, just at fewer sets.
       </div>
 
       <h3 style="margin-top:22px">How do you feel today?</h3>
@@ -262,9 +273,16 @@ function renderReadinessPrompt(){
       o.classList.add('sel');
     };
   });
+  document.querySelectorAll('#timeOpts .opt').forEach(o=>{
+    o.onclick = ()=>{
+      WorkoutEngine.setTimeBudget(STATE, Number(o.dataset.v));
+      document.querySelectorAll('#timeOpts .opt').forEach(x=>x.classList.remove('sel'));
+      o.classList.add('sel');
+    };
+  });
   document.querySelectorAll('#readinessOpts .opt').forEach(o=>{
     o.onclick = ()=>{
-      STATE.current = WorkoutEngine.generateSession(STATE, LIB, TPL, null, o.dataset.v);
+      STATE.current = WorkoutEngine.generateSession(STATE, LIB, TPL, null, o.dataset.v, STATE.timeBudget);
       WorkoutEngine.saveState(STATE);
       render();
     };
@@ -285,9 +303,14 @@ function render(){
     readinessPill = `<span class="pill warn">${WorkoutEngine.READINESS_LEVELS[s.readiness].label}</span>`;
   }
 
+  let timePill = '';
+  if(s.estimatedMinutes){
+    timePill = `<span class="pill">~${s.estimatedMinutes} min${s.timeBudget ? ' · target '+s.timeBudget : ''}</span>`;
+  }
+
   const totalSets = s.exercises.reduce((a,e)=>a + e.sets * (e.unilateralSplit?3:1),0);
   document.getElementById('daySub').innerHTML =
-    `${s.variantName} · ${s.exercises.length} exercises · ${totalSets} sets ${shoulderPill}${readinessPill}`;
+    `${s.variantName} · ${s.exercises.length} exercises · ${totalSets} sets ${timePill}${shoulderPill}${readinessPill}`;
 
   const app = document.getElementById('app');
   app.innerHTML = s.blocks.map((b,bi)=>{
@@ -469,7 +492,7 @@ function bindAll(){
 
   document.getElementById('regen').onclick = ()=>{
     if(!confirm('Rebuild today with different exercises?')) return;
-    STATE.current = WorkoutEngine.generateSession(STATE, LIB, TPL, STATE.current.dayType, STATE.current.readiness);
+    STATE.current = WorkoutEngine.generateSession(STATE, LIB, TPL, STATE.current.dayType, STATE.current.readiness, STATE.current.timeBudget);
     WorkoutEngine.saveState(STATE);
     render();
   };
