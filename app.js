@@ -12,7 +12,23 @@ const DEFAULT_STATE = {
   pointer: null,         // last completed day type
   lastVariant: {},       // { chest: 'chest-A', arms: 'arms-C', legs: 'legs-B' }
   seenVideos: [],        // exercise ids already shown a video for
-  current: null          // today's generated session, in progress
+  current: null,         // today's generated session, in progress
+  equipment: {           // what's available today. false = filtered out of the pool.
+    barbell: true, dumbbells: true, cables: true, machine: true,
+    bands: true, 'ez-bar': true, bodyweight: true
+  },
+  preferences: { favorites: [], avoided: [] } // exercise ids
+};
+
+// GitHub token/gist id live in their own key so they never ride along
+// inside exportData()/importData() or get pasted into a shared file.
+const GIST_CONFIG_KEY = 'josh_workout_gist_config';
+const GIST_FILENAME = 'workout-history.json';
+
+const READINESS_LEVELS = {
+  fresh: { setScale: 1,    skipFinisher: false, label: 'Fresh' },
+  tired: { setScale: 0.8,  skipFinisher: false, label: 'Tired: volume trimmed' },
+  rough: { setScale: 0.65, skipFinisher: true,  label: 'Rough: light session' }
 };
 
 function loadState() {
@@ -105,8 +121,25 @@ function passesShoulderGate(ex, status) {
   return safety !== 'no';
 }
 
+/* ---------- equipment gating ---------- */
+/* Same hard-filter pattern as the shoulder gate: if today's equipment
+   can't fill a block, the block shrinks. No substituting. */
+
+function passesEquipmentGate(ex, equipment) {
+  if (!equipment) return true;
+  return equipment[ex.equipment] !== false;
+}
+
+function isAvoided(ex, preferences) {
+  return !!(preferences && preferences.avoided && preferences.avoided.includes(ex.id));
+}
+
 /* ---------- overload math ---------- */
 /* Every note carries an explicit cue vs last session. */
+
+function ratedTooEasy(loggedRIR) {
+  return loggedRIR === '3' || loggedRIR === '4+';
+}
 
 function overloadCue(prev, ex) {
   if (!prev) {
@@ -115,9 +148,13 @@ function overloadCue(prev, ex) {
   const w = parseFloat(prev.loggedWeight);
   const reps = parseInt(prev.loggedReps, 10);
   const isBodyweight = ex.equipment === 'bodyweight' || !w || isNaN(w);
+  const tooEasy = ratedTooEasy(prev.loggedRIR);
 
   if (isBodyweight) {
     const target = (reps || 12) + 2;
+    if (tooEasy) {
+      return `Last time: ${reps || '?'} reps at RIR ${prev.loggedRIR}, more left in the tank. Add difficulty (tempo, ROM, or a harder variation) instead of just more reps.`;
+    }
     return `Last time: ${reps || '?'} reps. Target ${target} reps today.`;
   }
 
@@ -129,25 +166,36 @@ function overloadCue(prev, ex) {
   if (reps && reps >= topOfRange) {
     return `Last: ${w} lb x ${reps}. You topped the range, so add ${jump} lb to ${w + jump} lb and reset to the low end.`;
   }
+  if (tooEasy) {
+    return `Last: ${w} lb x ${reps || '?'} at RIR ${prev.loggedRIR}, that was too easy. Step to ${w + jump} lb even though you didn't top the rep range.`;
+  }
   return `Last: ${w} lb x ${reps || '?'}. Target ${w} lb for +1 to 2 reps, or step to ${w + jump} lb.`;
 }
 
 /* ---------- selection ---------- */
 
 function pickExercises(pool, count, state, used, status) {
-  // The shoulder gate is a hard filter. If a block cannot be filled with
-  // safe movements, the block shrinks or drops. It never falls back to
-  // an unsafe pick just to hit the target count.
+  const preferences = state.preferences || { favorites: [], avoided: [] };
+
+  // Shoulder gate, equipment gate, and avoided list are all hard filters.
+  // If a block cannot be filled after them, it shrinks or drops. Nothing
+  // ever falls back to an unsafe, unavailable, or avoided pick just to
+  // hit the target count.
   const eligible = pool
     .filter(ex => !used.has(ex.id))
-    .filter(ex => passesShoulderGate(ex, status));
+    .filter(ex => passesShoulderGate(ex, status))
+    .filter(ex => passesEquipmentGate(ex, state.equipment))
+    .filter(ex => !isAvoided(ex, preferences));
 
   if (!eligible.length) return [];
 
   // Freshness first: longest since last used wins, ties broken randomly.
+  // Favorited exercises get a scoring nudge so they surface more often
+  // without ever overriding the freshness/gating rules above.
   const scored = eligible.map(ex => ({
     ex,
     score: sessionsSinceUsed(state, ex.id) + Math.random() * 1.5
+      + (preferences.favorites.includes(ex.id) ? 2 : 0)
   })).sort((a, b) => b.score - a.score);
 
   return scored.slice(0, count).map(s => s.ex);
@@ -162,15 +210,21 @@ function pickVariant(dayType, state, templates) {
 
 /* ---------- the generator ---------- */
 
-function generateSession(state, library, templates, forcedDay) {
+function generateSession(state, library, templates, forcedDay, readiness) {
   const dayType = forcedDay || nextDayType(state, templates);
   const variant = pickVariant(dayType, state, templates);
   const status = shoulderStatus(state);
+  const level = READINESS_LEVELS[readiness] || READINESS_LEVELS.fresh;
   const pool = library[dayType];
   const used = new Set();
   const blocks = [];
 
   for (const block of variant.blocks) {
+    // Rough days drop finisher blocks outright. Non-negotiable blocks
+    // (legs machines, split squats, leg press) are never skipped, only
+    // scaled down below.
+    if (level.skipFinisher && /finisher/i.test(block.slot)) continue;
+
     const slotPool = pool.filter(ex => ex.slot === block.slot);
     const picks = pickExercises(slotPool, block.pick, state, used, status);
     picks.forEach(p => used.add(p.id));
@@ -186,7 +240,7 @@ function generateSession(state, library, templates, forcedDay) {
         return {
           id: ex.id,
           name: ex.name,
-          sets: ex.sets,
+          sets: Math.max(2, Math.round(ex.sets * level.setScale)),
           repRange: ex.repRange,
           rir: ex.rir,
           cue: ex.cue,
@@ -197,7 +251,8 @@ function generateSession(state, library, templates, forcedDay) {
           overload: overloadCue(prev, ex),
           completed: [],
           loggedWeight: '',
-          loggedReps: ''
+          loggedReps: '',
+          loggedRIR: ''
         };
       })
     });
@@ -209,6 +264,7 @@ function generateSession(state, library, templates, forcedDay) {
     variantId: variant.id,
     variantName: variant.name,
     shoulderCarry: status,
+    readiness: READINESS_LEVELS[readiness] ? readiness : 'fresh',
     blocks,
     exercises: blocks.flatMap(b => b.exercises)
   };
@@ -235,6 +291,107 @@ function completeSession(state, log) {
   state.current = null;
 
   saveState(state);
+  return state;
+}
+
+/* ---------- preferences & equipment ---------- */
+
+function toggleFavorite(state, id) {
+  state.preferences = state.preferences || { favorites: [], avoided: [] };
+  const i = state.preferences.favorites.indexOf(id);
+  if (i >= 0) {
+    state.preferences.favorites.splice(i, 1);
+  } else {
+    state.preferences.favorites.push(id);
+    const ai = state.preferences.avoided.indexOf(id);
+    if (ai >= 0) state.preferences.avoided.splice(ai, 1);
+  }
+  saveState(state);
+  return state;
+}
+
+function toggleAvoided(state, id) {
+  state.preferences = state.preferences || { favorites: [], avoided: [] };
+  const i = state.preferences.avoided.indexOf(id);
+  if (i >= 0) {
+    state.preferences.avoided.splice(i, 1);
+  } else {
+    state.preferences.avoided.push(id);
+    const fi = state.preferences.favorites.indexOf(id);
+    if (fi >= 0) state.preferences.favorites.splice(fi, 1);
+  }
+  saveState(state);
+  return state;
+}
+
+function setEquipment(state, type, enabled) {
+  state.equipment = state.equipment || structuredClone(DEFAULT_STATE.equipment);
+  state.equipment[type] = enabled;
+  saveState(state);
+  return state;
+}
+
+/* ---------- gist sync ---------- */
+/* Token and gist id live outside the exportable state (see GIST_CONFIG_KEY
+   above), so history exports/imports never carry a credential. */
+
+function loadGistConfig() {
+  try {
+    const raw = localStorage.getItem(GIST_CONFIG_KEY);
+    return raw ? Object.assign({ token: '', gistId: '', lastSync: null }, JSON.parse(raw)) : { token: '', gistId: '', lastSync: null };
+  } catch (e) {
+    return { token: '', gistId: '', lastSync: null };
+  }
+}
+
+function saveGistConfig(cfg) {
+  localStorage.setItem(GIST_CONFIG_KEY, JSON.stringify(cfg));
+}
+
+async function pushToGist(state) {
+  const cfg = loadGistConfig();
+  if (!cfg.token) throw new Error('No GitHub token saved. Add one in Settings.');
+
+  const body = {
+    description: 'Workout app history sync',
+    public: false,
+    files: { [GIST_FILENAME]: { content: JSON.stringify(state, null, 2) } }
+  };
+
+  const url = cfg.gistId ? `https://api.github.com/gists/${cfg.gistId}` : 'https://api.github.com/gists';
+  const res = await fetch(url, {
+    method: cfg.gistId ? 'PATCH' : 'POST',
+    headers: {
+      'Authorization': `token ${cfg.token}`,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(`Gist push failed: ${res.status} ${await res.text()}`);
+  const data = await res.json();
+  cfg.gistId = data.id;
+  cfg.lastSync = new Date().toISOString();
+  saveGistConfig(cfg);
+  return cfg;
+}
+
+async function pullFromGist() {
+  const cfg = loadGistConfig();
+  if (!cfg.token) throw new Error('No GitHub token saved. Add one in Settings.');
+  if (!cfg.gistId) throw new Error('No gist id saved yet. Push once first, or paste an existing gist id.');
+
+  const res = await fetch(`https://api.github.com/gists/${cfg.gistId}`, {
+    headers: { 'Authorization': `token ${cfg.token}`, 'Accept': 'application/vnd.github+json' }
+  });
+  if (!res.ok) throw new Error(`Gist pull failed: ${res.status} ${await res.text()}`);
+  const data = await res.json();
+  const file = data.files[GIST_FILENAME];
+  if (!file) throw new Error(`Gist has no ${GIST_FILENAME} file.`);
+  const state = JSON.parse(file.content);
+  saveState(state);
+  cfg.lastSync = new Date().toISOString();
+  saveGistConfig(cfg);
   return state;
 }
 
@@ -294,5 +451,8 @@ function computeStats(state) {
 window.WorkoutEngine = {
   loadState, saveState, generateSession, completeSession,
   exportData, importData, computeStats, nextDayType,
-  lastSessionOfType, shoulderStatus
+  lastSessionOfType, shoulderStatus,
+  toggleFavorite, toggleAvoided, setEquipment,
+  loadGistConfig, saveGistConfig, pushToGist, pullFromGist,
+  READINESS_LEVELS
 };
