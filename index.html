@@ -132,6 +132,28 @@
     color:var(--dim);font-size:12px;word-break:break-all;
   }
   .errbox code{background:var(--panel2);padding:2px 5px;border-radius:4px;font-size:11px}
+  .ex-actions{display:flex;gap:6px;align-items:center}
+  .iconbtn{
+    width:34px;height:34px;border-radius:50%;border:1px solid var(--line);
+    background:var(--panel2);color:var(--dim);font-size:14px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .iconbtn.fav-on{background:#3a2418;border-color:var(--accent);color:var(--accent)}
+  .logrow select{
+    background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:11px 8px;color:var(--text);font-size:14px;
+  }
+  .resttimer{
+    position:fixed;left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));
+    z-index:25;background:var(--panel);border:1px solid var(--accent);border-radius:12px;
+    padding:10px 14px;display:flex;align-items:center;gap:10px;
+    box-shadow:0 6px 20px rgba(0,0,0,.4);
+  }
+  .resttimer #restTime{font-weight:800;font-size:18px;font-variant-numeric:tabular-nums;flex:1}
+  .resttimer button{
+    padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);
+    color:var(--text);font-size:13px;font-weight:650;cursor:pointer;width:auto;
+  }
 </style>
 </head>
 <body>
@@ -143,9 +165,16 @@
 
 <main id="app"><div class="empty">Loading your history…</div></main>
 
+<div id="restTimer" class="resttimer" style="display:none">
+  <span id="restTime">0:00</span>
+  <button id="restAdd">+30s</button>
+  <button id="restSkip">Skip</button>
+</div>
+
 <nav>
   <a href="index.html" class="on">Today</a>
   <a href="history.html">History</a>
+  <a href="settings.html">Settings</a>
 </nav>
 
 <script src="data.js"></script>
@@ -191,10 +220,73 @@ function boot(){
 
   const today = new Date().toISOString().slice(0,10);
   if(!STATE.current || STATE.current.date !== today){
-    STATE.current = WorkoutEngine.generateSession(STATE, LIB, TPL);
-    WorkoutEngine.saveState(STATE);
+    renderReadinessPrompt();
+    return;
   }
   render();
+}
+
+function renderReadinessPrompt(){
+  const dayType = WorkoutEngine.nextDayType(STATE, TPL);
+  document.getElementById('dayTitle').textContent = TPL[dayType].label + ' Day';
+  document.getElementById('daySub').textContent = "Before today's session...";
+
+  const activePreset = WorkoutEngine.matchingEquipmentPreset(STATE);
+  const presets = WorkoutEngine.EQUIPMENT_PRESETS;
+  const timeOptions = [30, 45, 60, 75, 90];
+  const activeTime = STATE.timeBudget || 0;
+
+  document.getElementById('app').innerHTML = `
+    <div class="logform">
+      <h3>What do you have today?</h3>
+      <div class="opts" id="equipOpts">
+        ${Object.keys(presets).map(k=>`<div class="opt${activePreset===k?' sel':''}" data-v="${k}">${presets[k].label}</div>`).join('')}
+      </div>
+      <div class="m" style="color:var(--dim);font-size:12px;margin-top:8px">
+        Need finer control? Toggle individual equipment types in <a class="vid" style="margin:0" href="settings.html">Settings</a>.
+      </div>
+
+      <h3 style="margin-top:22px">How much time do you have?</h3>
+      <div class="opts" id="timeOpts">
+        ${timeOptions.map(m=>`<div class="opt${activeTime===m?' sel':''}" data-v="${m}">${m} min</div>`).join('')}
+        <div class="opt${activeTime===0?' sel':''}" data-v="0">No limit</div>
+      </div>
+      <div class="m" style="color:var(--dim);font-size:12px;margin-top:8px">
+        Tight on time trims sets first, then drops optional exercises. Legs-day non-negotiables always stay, just at fewer sets.
+      </div>
+
+      <h3 style="margin-top:22px">How do you feel today?</h3>
+      <div class="opts" id="readinessOpts">
+        <div class="opt" data-v="fresh">Fresh</div>
+        <div class="opt" data-v="tired">Tired</div>
+        <div class="opt" data-v="rough">Rough</div>
+      </div>
+      <div class="note" style="margin-top:16px">
+        <b>What changes</b>Tired trims accessory volume about 20%. Rough trims further and drops finisher blocks entirely. Legs-day non-negotiables never disappear, only their set counts shrink.
+      </div>
+    </div>`;
+
+  document.querySelectorAll('#equipOpts .opt').forEach(o=>{
+    o.onclick = ()=>{
+      WorkoutEngine.setEquipmentPreset(STATE, o.dataset.v);
+      document.querySelectorAll('#equipOpts .opt').forEach(x=>x.classList.remove('sel'));
+      o.classList.add('sel');
+    };
+  });
+  document.querySelectorAll('#timeOpts .opt').forEach(o=>{
+    o.onclick = ()=>{
+      WorkoutEngine.setTimeBudget(STATE, Number(o.dataset.v));
+      document.querySelectorAll('#timeOpts .opt').forEach(x=>x.classList.remove('sel'));
+      o.classList.add('sel');
+    };
+  });
+  document.querySelectorAll('#readinessOpts .opt').forEach(o=>{
+    o.onclick = ()=>{
+      STATE.current = WorkoutEngine.generateSession(STATE, LIB, TPL, null, o.dataset.v, STATE.timeBudget);
+      WorkoutEngine.saveState(STATE);
+      render();
+    };
+  });
 }
 
 function render(){
@@ -206,9 +298,19 @@ function render(){
   if(s.shoulderCarry === 'sore') shoulderPill = '<span class="pill warn">Shoulder sore: pressing dialed back</span>';
   else if(s.shoulderCarry === 'minor') shoulderPill = '<span class="pill warn">Shoulder minor: overhead conservative</span>';
 
+  let readinessPill = '';
+  if(s.readiness && s.readiness !== 'fresh'){
+    readinessPill = `<span class="pill warn">${WorkoutEngine.READINESS_LEVELS[s.readiness].label}</span>`;
+  }
+
+  let timePill = '';
+  if(s.estimatedMinutes){
+    timePill = `<span class="pill">~${s.estimatedMinutes} min${s.timeBudget ? ' · target '+s.timeBudget : ''}</span>`;
+  }
+
   const totalSets = s.exercises.reduce((a,e)=>a + e.sets * (e.unilateralSplit?3:1),0);
   document.getElementById('daySub').innerHTML =
-    `${s.variantName} · ${s.exercises.length} exercises · ${totalSets} sets ${shoulderPill}`;
+    `${s.variantName} · ${s.exercises.length} exercises · ${totalSets} sets ${timePill}${shoulderPill}${readinessPill}`;
 
   const app = document.getElementById('app');
   app.innerHTML = s.blocks.map((b,bi)=>{
@@ -241,6 +343,8 @@ function exCard(e,bi,ei){
   const done = e.completed.length;
   const total = e.sets * (e.unilateralSplit?1:1) + (e.unilateralSplit?6:0);
   const newTag = e.isNew ? '<span class="pill new">New</span>' : '';
+  const isFav = (STATE.preferences && STATE.preferences.favorites.includes(e.id)) ? ' fav-on' : '';
+  const rirOpts = ['0','1','2','3','4+','failure'];
 
   return `
   <div class="ex" data-card="${bi}-${ei}">
@@ -248,6 +352,10 @@ function exCard(e,bi,ei){
       <div>
         <div class="ex-name">${e.name}${newTag}</div>
         <div class="ex-meta">${e.sets} × ${e.repRange} · ${e.rir==='failure'?'to failure':e.rir+' RIR'} · ${done}/${total} done</div>
+      </div>
+      <div class="ex-actions">
+        <button type="button" class="iconbtn${isFav}" data-fav="${e.id}" title="Favorite" onclick="event.stopPropagation()">♥</button>
+        <button type="button" class="iconbtn" data-avoid="${e.id}" title="Avoid this exercise" onclick="event.stopPropagation()">🚫</button>
       </div>
       <div class="chev">▶</div>
     </div>
@@ -259,6 +367,10 @@ function exCard(e,bi,ei){
       <div class="logrow">
         <input placeholder="Weight (lb)" value="${e.loggedWeight}" data-w="${bi}-${ei}" inputmode="decimal">
         <input placeholder="Top-set reps" value="${e.loggedReps}" data-r="${bi}-${ei}" inputmode="numeric">
+        <select data-rir="${bi}-${ei}">
+          <option value="">RIR</option>
+          ${rirOpts.map(v=>`<option value="${v}" ${e.loggedRIR===v?'selected':''}>${v==='failure'?'Failure':v}</option>`).join('')}
+        </select>
       </div>
     </div>
   </div>`;
@@ -300,11 +412,16 @@ function bindAll(){
       const ex = STATE.current.blocks[bi].exercises[ei];
       const key = Number(k);
       const i = ex.completed.indexOf(key);
+      const turningOn = i < 0;
       if(i>=0) ex.completed.splice(i,1); else ex.completed.push(key);
       b.classList.toggle('on');
       WorkoutEngine.saveState(STATE);
       const meta = b.closest('.ex').querySelector('.ex-meta');
       meta.textContent = meta.textContent.replace(/\d+\/(\d+) done/, ex.completed.length+'/$1 done');
+      if(turningOn){
+        const top = parseInt(String(ex.repRange).split('-')[1],10) || 12;
+        startRestTimer(top <= 8 ? 150 : (top <= 12 ? 90 : 60));
+      }
     };
   });
 
@@ -320,6 +437,29 @@ function bindAll(){
       const [bi,ei] = inp.dataset.r.split('-');
       STATE.current.blocks[bi].exercises[ei].loggedReps = inp.value;
       WorkoutEngine.saveState(STATE);
+    };
+  });
+  document.querySelectorAll('[data-rir]').forEach(sel=>{
+    sel.onchange = ()=>{
+      const [bi,ei] = sel.dataset.rir.split('-');
+      STATE.current.blocks[bi].exercises[ei].loggedRIR = sel.value;
+      WorkoutEngine.saveState(STATE);
+    };
+  });
+
+  document.querySelectorAll('[data-fav]').forEach(btn=>{
+    btn.onclick = (ev)=>{
+      ev.stopPropagation();
+      WorkoutEngine.toggleFavorite(STATE, btn.dataset.fav);
+      btn.classList.toggle('fav-on');
+    };
+  });
+  document.querySelectorAll('[data-avoid]').forEach(btn=>{
+    btn.onclick = (ev)=>{
+      ev.stopPropagation();
+      if(!confirm('Avoid this exercise going forward? Undo it any time from Settings.')) return;
+      WorkoutEngine.toggleAvoided(STATE, btn.dataset.avoid);
+      btn.closest('.ex').style.opacity = '0.4';
     };
   });
 
@@ -352,11 +492,46 @@ function bindAll(){
 
   document.getElementById('regen').onclick = ()=>{
     if(!confirm('Rebuild today with different exercises?')) return;
-    STATE.current = WorkoutEngine.generateSession(STATE, LIB, TPL, STATE.current.dayType);
+    STATE.current = WorkoutEngine.generateSession(STATE, LIB, TPL, STATE.current.dayType, STATE.current.readiness, STATE.current.timeBudget);
     WorkoutEngine.saveState(STATE);
     render();
   };
 }
+
+/* ---------- rest timer ---------- */
+/* Static widget outside #app so it survives render() re-draws. */
+
+let restInterval = null;
+let restRemaining = 0;
+
+function updateRestDisplay(){
+  const m = Math.floor(restRemaining / 60);
+  const s = String(restRemaining % 60).padStart(2, '0');
+  document.getElementById('restTime').textContent = `${m}:${s}`;
+}
+
+function startRestTimer(seconds){
+  clearInterval(restInterval);
+  restRemaining = seconds;
+  document.getElementById('restTimer').style.display = 'flex';
+  updateRestDisplay();
+  restInterval = setInterval(()=>{
+    restRemaining--;
+    if(restRemaining <= 0){
+      clearInterval(restInterval);
+      document.getElementById('restTimer').style.display = 'none';
+      if(navigator.vibrate) navigator.vibrate([200,100,200]);
+      return;
+    }
+    updateRestDisplay();
+  }, 1000);
+}
+
+document.getElementById('restAdd').onclick = ()=>{ restRemaining += 30; updateRestDisplay(); };
+document.getElementById('restSkip').onclick = ()=>{
+  clearInterval(restInterval);
+  document.getElementById('restTimer').style.display = 'none';
+};
 
 boot();
 

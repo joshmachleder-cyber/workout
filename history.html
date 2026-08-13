@@ -62,6 +62,7 @@
 <nav>
   <a href="index.html">Today</a>
   <a href="history.html" class="on">History</a>
+  <a href="settings.html">Settings</a>
 </nav>
 
 <script src="data.js"></script>
@@ -107,7 +108,7 @@ function render(){
           <div class="m">${s.date}</div>
         </div>
         <div class="m" style="margin-top:5px">
-          ${s.rating||'?'}/5 · energy ${s.energy||'?'} · shoulder ${s.shoulder||'?'} · ${(s.exercises||[]).length} exercises
+          ${s.rating||'?'}/5 · energy ${s.energy||'?'} · shoulder ${s.shoulder||'?'}${s.readiness && s.readiness!=='fresh' ? ' · felt '+s.readiness : ''} · ${(s.exercises||[]).length} exercises
         </div>
         ${s.notes?`<div class="notes">${s.notes}</div>`:''}
       </div>`).join('')}
