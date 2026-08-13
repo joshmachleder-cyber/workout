@@ -31,6 +31,14 @@ const READINESS_LEVELS = {
   rough: { setScale: 0.65, skipFinisher: true,  label: 'Rough: light session' }
 };
 
+// Quick one-tap equipment contexts for the landing screen. Settings still
+// exposes every type individually for fine-tuning beyond these three.
+const EQUIPMENT_PRESETS = {
+  full:    { label: 'Full Gym',       equipment: { barbell: true,  dumbbells: true, cables: true,  machine: true,  bands: true, 'ez-bar': true,  bodyweight: true } },
+  home:    { label: 'Home / Limited', equipment: { barbell: false, dumbbells: true, cables: false, machine: false, bands: true, 'ez-bar': false, bodyweight: true } },
+  minimal: { label: 'Bodyweight Only',equipment: { barbell: false, dumbbells: false,cables: false, machine: false, bands: true, 'ez-bar': false, bodyweight: true } }
+};
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
@@ -331,6 +339,25 @@ function setEquipment(state, type, enabled) {
   return state;
 }
 
+function setEquipmentPreset(state, key) {
+  const preset = EQUIPMENT_PRESETS[key];
+  if (!preset) return state;
+  state.equipment = structuredClone(preset.equipment);
+  saveState(state);
+  return state;
+}
+
+// Which preset (if any) the current equipment state matches, for
+// highlighting the right button on the landing screen. null = custom mix.
+function matchingEquipmentPreset(state) {
+  const current = state.equipment || DEFAULT_STATE.equipment;
+  for (const key of Object.keys(EQUIPMENT_PRESETS)) {
+    const preset = EQUIPMENT_PRESETS[key].equipment;
+    if (Object.keys(preset).every(t => !!preset[t] === (current[t] !== false))) return key;
+  }
+  return null;
+}
+
 /* ---------- gist sync ---------- */
 /* Token and gist id live outside the exportable state (see GIST_CONFIG_KEY
    above), so history exports/imports never carry a credential. */
@@ -453,6 +480,7 @@ window.WorkoutEngine = {
   exportData, importData, computeStats, nextDayType,
   lastSessionOfType, shoulderStatus,
   toggleFavorite, toggleAvoided, setEquipment,
+  setEquipmentPreset, matchingEquipmentPreset,
   loadGistConfig, saveGistConfig, pushToGist, pullFromGist,
-  READINESS_LEVELS
+  READINESS_LEVELS, EQUIPMENT_PRESETS
 };

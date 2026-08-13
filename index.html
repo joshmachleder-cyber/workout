@@ -230,9 +230,21 @@ function renderReadinessPrompt(){
   const dayType = WorkoutEngine.nextDayType(STATE, TPL);
   document.getElementById('dayTitle').textContent = TPL[dayType].label + ' Day';
   document.getElementById('daySub').textContent = "Before today's session...";
+
+  const activePreset = WorkoutEngine.matchingEquipmentPreset(STATE);
+  const presets = WorkoutEngine.EQUIPMENT_PRESETS;
+
   document.getElementById('app').innerHTML = `
     <div class="logform">
-      <h3>How do you feel today?</h3>
+      <h3>What do you have today?</h3>
+      <div class="opts" id="equipOpts">
+        ${Object.keys(presets).map(k=>`<div class="opt${activePreset===k?' sel':''}" data-v="${k}">${presets[k].label}</div>`).join('')}
+      </div>
+      <div class="m" style="color:var(--dim);font-size:12px;margin-top:8px">
+        Need finer control? Toggle individual equipment types in <a class="vid" style="margin:0" href="settings.html">Settings</a>.
+      </div>
+
+      <h3 style="margin-top:22px">How do you feel today?</h3>
       <div class="opts" id="readinessOpts">
         <div class="opt" data-v="fresh">Fresh</div>
         <div class="opt" data-v="tired">Tired</div>
@@ -242,6 +254,14 @@ function renderReadinessPrompt(){
         <b>What changes</b>Tired trims accessory volume about 20%. Rough trims further and drops finisher blocks entirely. Legs-day non-negotiables never disappear, only their set counts shrink.
       </div>
     </div>`;
+
+  document.querySelectorAll('#equipOpts .opt').forEach(o=>{
+    o.onclick = ()=>{
+      WorkoutEngine.setEquipmentPreset(STATE, o.dataset.v);
+      document.querySelectorAll('#equipOpts .opt').forEach(x=>x.classList.remove('sel'));
+      o.classList.add('sel');
+    };
+  });
   document.querySelectorAll('#readinessOpts .opt').forEach(o=>{
     o.onclick = ()=>{
       STATE.current = WorkoutEngine.generateSession(STATE, LIB, TPL, null, o.dataset.v);

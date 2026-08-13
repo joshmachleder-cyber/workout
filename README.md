@@ -36,9 +36,11 @@ Skip the import if you would rather start clean.
 
 **Exercise selection.** Every movement is scored by how many sessions have passed since you last did it. Longest gap wins, with a small random tiebreak. Favorited exercises (♥ on any exercise card) get a scoring nudge. Avoided exercises (🚫) are hard-excluded until you undo it from Settings. New movements surface naturally, and a demo video link appears the first time an exercise comes up.
 
-**Equipment.** The Settings tab has a toggle per equipment type (barbell, dumbbells, cables, machine, bands, ez-bar, bodyweight). Turn off what you can't access today and the generator filters the pool before picking — same hard-filter pattern as the shoulder gate, so a block shrinks rather than substituting something unavailable.
+**Landing screen.** Before generating a new day, the app asks two quick questions: what equipment you have (Full Gym / Home / Bodyweight Only, one tap), and how you feel (Fresh / Tired / Rough). Both apply immediately to that day's generation.
 
-**Readiness.** Before generating a new day, the app asks how you feel: Fresh, Tired, or Rough. Tired trims accessory/isolation volume about 20%. Rough trims further and drops finisher blocks outright. Legs-day non-negotiables never disappear, only their set counts shrink. It's recorded on the session so History shows it.
+**Equipment.** The three landing-screen presets cover the common cases. For finer control, the Settings tab has a toggle per equipment type (barbell, dumbbells, cables, machine, bands, ez-bar, bodyweight). Whatever you turn off, the generator filters out of the pool before picking — same hard-filter pattern as the shoulder gate, so a block shrinks rather than substituting something unavailable.
+
+**Readiness.** Tired trims accessory/isolation volume about 20%. Rough trims further and drops finisher blocks outright. Legs-day non-negotiables never disappear, only their set counts shrink. It's recorded on the session so History shows it.
 
 **Shoulder gating.** Every exercise is tagged `yes`, `caution`, or `no` for shoulder safety. Your most recent logged shoulder status filters the pool:
 
