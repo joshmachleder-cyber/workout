@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<title>Workout</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --line:#2b3341;
+    --text:#e6edf3; --dim:#8b949e; --accent:#f78166; --good:#3fb950;
+    --warn:#d29922; --blue:#58a6ff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:0 0 96px;
+  }
+  header{
+    position:sticky;top:0;z-index:20;background:rgba(13,17,23,.92);
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--line);
+    padding:14px 16px calc(14px + env(safe-area-inset-top)) 16px;
+    padding-top:calc(14px + env(safe-area-inset-top));
+  }
+  .day{font-size:26px;font-weight:800;letter-spacing:-.5px}
+  .sub{color:var(--dim);font-size:13px;margin-top:2px}
+  .pill{
+    display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.6px;padding:3px 8px;border-radius:999px;margin-left:8px;
+    background:var(--panel2);color:var(--dim);border:1px solid var(--line);
+  }
+  .pill.warn{color:var(--warn);border-color:#463a1a}
+  .pill.new{color:var(--good);border-color:#1d3d24}
+  main{padding:16px}
+  .blocklabel{
+    font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+    color:var(--dim);margin:22px 0 10px;display:flex;align-items:center;gap:8px;
+  }
+  .blocklabel::after{content:"";flex:1;height:1px;background:var(--line)}
+  .superset{
+    border-left:3px solid var(--accent);padding-left:10px;margin-bottom:14px;
+  }
+  .superset-tag{color:var(--accent);font-size:11px;font-weight:700;letter-spacing:.6px}
+  .ex{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    margin-bottom:10px;overflow:hidden;
+  }
+  .ex-head{
+    padding:14px;display:flex;justify-content:space-between;align-items:center;
+    cursor:pointer;gap:10px;
+  }
+  .ex-name{font-weight:650;font-size:16px;flex:1}
+  .ex-meta{color:var(--dim);font-size:13px;margin-top:3px;font-variant-numeric:tabular-nums}
+  .chev{color:var(--dim);transition:transform .2s;font-size:13px}
+  .ex.open .chev{transform:rotate(90deg)}
+  .ex-body{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
+  .ex.open .ex-body{display:block}
+  .bubbles{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}
+  .bub{
+    width:44px;height:44px;border-radius:50%;border:2px solid var(--line);
+    background:var(--panel2);color:var(--dim);font-weight:700;font-size:15px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:all .15s;
+  }
+  .bub.on{background:var(--good);border-color:var(--good);color:#04140a}
+  .note{
+    background:var(--panel2);border-radius:8px;padding:10px 12px;margin-top:10px;
+    font-size:14px;line-height:1.5;
+  }
+  .note b{color:var(--blue);display:block;font-size:11px;text-transform:uppercase;
+    letter-spacing:.7px;margin-bottom:4px}
+  .note.overload b{color:var(--accent)}
+  .logrow{display:flex;gap:8px;margin-top:12px}
+  .logrow input{
+    flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:11px;color:var(--text);font-size:15px;min-width:0;
+  }
+  .vid{
+    display:inline-block;margin-top:10px;color:var(--blue);font-size:14px;
+    text-decoration:none;font-weight:600;
+  }
+  button.primary{
+    width:100%;padding:15px;border-radius:10px;border:0;background:var(--accent);
+    color:#1a0d08;font-weight:750;font-size:16px;cursor:pointer;
+  }
+  button.ghost{
+    width:100%;padding:13px;border-radius:10px;background:transparent;
+    border:1px solid var(--line);color:var(--dim);font-size:14px;cursor:pointer;
+    font-weight:600;
+  }
+  .logform{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin-top:26px;
+  }
+  .logform h3{margin:0 0 14px;font-size:16px}
+  .lbl{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.7px;
+    margin:14px 0 7px;font-weight:700}
+  .opts{display:flex;gap:7px;flex-wrap:wrap}
+  .opt{
+    padding:9px 15px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--dim);font-size:14px;cursor:pointer;font-weight:600;
+  }
+  .opt.sel{background:var(--blue);border-color:var(--blue);color:#04121f}
+  textarea{
+    width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:11px;color:var(--text);font-size:15px;min-height:70px;resize:vertical;
+    font-family:inherit;
+  }
+  nav{
+    position:fixed;bottom:0;left:0;right:0;background:rgba(13,17,23,.95);
+    backdrop-filter:blur(12px);border-top:1px solid var(--line);display:flex;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav a{
+    flex:1;text-align:center;padding:13px 0;color:var(--dim);text-decoration:none;
+    font-size:12px;font-weight:650;
+  }
+  nav a.on{color:var(--accent)}
+  .empty{text-align:center;color:var(--dim);padding:60px 20px}
+  .errbox{
+    background:var(--panel);border:1px solid #4a2226;border-radius:12px;
+    padding:18px;font-size:15px;line-height:1.6;
+  }
+  .errtitle{color:#f85149;font-weight:750;margin-bottom:10px;font-size:16px}
+  .errbox b{color:var(--text)}
+  .errhint{
+    margin-top:14px;padding-top:12px;border-top:1px solid var(--line);
+    color:var(--dim);font-size:12px;word-break:break-all;
+  }
+  .errbox code{background:var(--panel2);padding:2px 5px;border-radius:4px;font-size:11px}
+
+  /* start screen: last session + day picker */
+  .lastcard{
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line);
+    border-radius:12px;padding:16px;
+  }
+  .lastcard.legs{border-left-color:var(--good)}
+  .lastcard.chest{border-left-color:var(--accent)}
+  .lastcard.arms{border-left-color:var(--blue)}
+  .lastlbl{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--dim);
+    font-weight:700;margin-bottom:7px}
+  .lastday{font-size:20px;font-weight:750;letter-spacing:-.3px}
+  .lastwhen{color:var(--dim);font-size:13px;margin-top:2px}
+  .laststats{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:13px;
+    color:var(--dim);font-variant-numeric:tabular-nums}
+  .laststats b{color:var(--text);font-weight:700}
+  .lastnotes{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
+    font-size:14px;color:var(--dim);line-height:1.5}
+  .wtable{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);display:none}
+  .wtable.show{display:block}
+  .wrow{display:flex;justify-content:space-between;gap:12px;font-size:13px;
+    color:var(--dim);padding:3px 0;font-variant-numeric:tabular-nums}
+  .wrow span:first-child{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .linkbtn{background:none;border:0;color:var(--blue);font-size:13px;font-weight:600;
+    padding:10px 0 0;cursor:pointer;font-family:inherit;display:inline-block}
+  .ask{font-size:17px;font-weight:700;margin:26px 0 12px;letter-spacing:-.2px}
+  .setup{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin-top:16px}
+  .setup .lbl:first-child{margin-top:0}
+  .setupfoot{font-size:12px;color:var(--dim);margin-top:14px;padding-top:12px;
+    border-top:1px solid var(--line);line-height:1.5}
+  .daybtn{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:16px;color:var(--text);font-size:17px;font-weight:700;cursor:pointer;
+    margin-bottom:10px;font-family:inherit;
+  }
+  .daybtn .dot{width:10px;height:10px;border-radius:50%;background:var(--dim);flex-shrink:0}
+  .daybtn.legs .dot{background:var(--good)}
+  .daybtn.chest .dot{background:var(--accent)}
+  .daybtn.arms .dot{background:var(--blue)}
+  .daybtn .grow{flex:1}
+  .daybtn .tail{font-size:12px;font-weight:600;color:var(--dim)}
+  .daybtn .tail.next{color:var(--good)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="day" id="dayTitle">Loading</div>
+  <div class="sub" id="daySub"></div>
+</header>
+
+<main id="app"><div class="empty">Loading your history…</div></main>
+
+<nav>
+  <a href="index.html" class="on">Today</a>
+  <a href="history.html">History</a>
+</nav>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>
+let STATE, LIB, TPL;
+
+function showError(msg){
+  document.getElementById('dayTitle').textContent = 'Setup needed';
+  document.getElementById('daySub').textContent = 'One file did not upload';
+  document.getElementById('app').innerHTML =
+    `<div class="errbox">
+       <div class="errtitle">⚠ data.js is missing</div>
+       <div>${msg}</div>
+       <div class="errhint">Current address:<br><code>${location.href}</code></div>
+       <button class="ghost" style="margin-top:14px" onclick="hardReset()">Clear cache &amp; retry</button>
+     </div>`;
+}
+
+async function hardReset(){
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    if(window.caches){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+  }catch(e){}
+  location.reload(true);
+}
+
+function boot(){
+  if(typeof window.EXERCISES === 'undefined' || typeof window.TEMPLATES === 'undefined'){
+    showError('Upload <b>data.js</b> to your repository, in the same place as index.html. It sits alongside the other files, not in a folder.');
+    return;
+  }
+
+  LIB = window.EXERCISES;
+  TPL = window.TEMPLATES;
+  STATE = WorkoutEngine.loadState();
+
+  const today = new Date().toISOString().slice(0,10);
+
+  // A session already started today: pick up where you left off.
+  if(STATE.current && STATE.current.date === today){
+    render();
+    return;
+  }
+
+  // Otherwise clear any stale half-finished day and open on the start screen.
+  if(STATE.current){
+    STATE.current = null;
+    WorkoutEngine.saveState(STATE);
+  }
+  renderStart();
+}
+
+/* ---------- start screen ---------- */
+
+function sessionTally(s){
+  const ex = (s.exercises && s.exercises.length)
+    ? s.exercises
+    : (s.blocks || []).reduce((a,b)=>a.concat(b.exercises),[]);
+  return {
+    ex,
+    done:  ex.reduce((a,e)=>a + ((e.completed||[]).length), 0),
+    total: ex.reduce((a,e)=>a + e.sets * (e.unilateralSplit?3:1), 0)
+  };
+}
+
+function prettyDate(iso){
+  const p = iso.split('-');
+  return new Date(+p[0], +p[1]-1, +p[2])
+    .toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+}
+
+function daysAgo(iso){
+  const p = iso.split('-');
+  const then = new Date(+p[0], +p[1]-1, +p[2]);
+  const now = new Date(); now.setHours(0,0,0,0);
+  const n = Math.round((now - then)/86400000);
+  if(n <= 0) return 'today';
+  if(n === 1) return 'yesterday';
+  return n + ' days ago';
+}
+
+function esc(v){
+  return String(v==null?'':v).replace(/[&<>"]/g,
+    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function renderStart(){
+  document.getElementById('dayTitle').textContent = 'Today';
+  document.getElementById('daySub').textContent =
+    new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+
+  const last = STATE.sessions[STATE.sessions.length-1] || null;
+  let card;
+
+  if(last){
+    const t = sessionTally(last);
+    const weights = t.ex
+      .filter(e => e.loggedWeight)
+      .map(e => `<div class="wrow"><span>${esc(e.name)}</span><span>${esc(e.loggedWeight)} lb${e.loggedReps?' × '+esc(e.loggedReps):''}</span></div>`)
+      .join('');
+
+    card = `
+      <div class="lastcard ${last.dayType}">
+        <div class="lastlbl">Last session</div>
+        <div class="lastday">${TPL[last.dayType].label} Day</div>
+        <div class="lastwhen">${prettyDate(last.date)} · ${daysAgo(last.date)}</div>
+        <div class="laststats">
+          <span><b>${t.done}</b>/${t.total} sets</span>
+          ${last.rating   ? `<span>Rating <b>${esc(last.rating)}</b>/5</span>` : ''}
+          ${last.shoulder ? `<span>Shoulder <b>${esc(last.shoulder)}</b></span>` : ''}
+          ${last.energy   ? `<span>Energy <b>${esc(last.energy)}</b></span>` : ''}
+        </div>
+        ${last.notes ? `<div class="lastnotes">${esc(last.notes)}</div>` : ''}
+        ${weights ? `<button class="linkbtn" id="togW">Show the weights you logged</button>
+                     <div class="wtable" id="wt">${weights}</div>` : ''}
+      </div>`;
+  } else {
+    card = `
+      <div class="lastcard">
+        <div class="lastlbl">Last session</div>
+        <div class="lastwhen">Nothing saved yet. Finish a session and it shows up here.</div>
+      </div>`;
+  }
+
+  const suggested = WorkoutEngine.nextDayType(STATE, TPL);
+  const buttons = ['legs','chest','arms'].map(d => {
+    const prev = WorkoutEngine.lastSessionOfType(STATE, d);
+    const tail = d === suggested
+      ? '<span class="tail next">Next up</span>'
+      : (prev ? `<span class="tail">${daysAgo(prev.date)}</span>` : '');
+    return `<button class="daybtn ${d}" data-day="${d}">
+              <span class="dot"></span><span class="grow">${TPL[d].label}</span>${tail}
+            </button>`;
+  }).join('');
+
+  const eqNow   = WorkoutEngine.matchingEquipmentPreset(STATE) || 'full';
+  const TIMES = [45,60,75,90];
+  const timeNow = TIMES.includes(STATE.timeBudget) ? STATE.timeBudget : 75;
+
+  const eqOpts = Object.keys(WorkoutEngine.EQUIPMENT_PRESETS).map(k =>
+    `<div class="opt${k===eqNow?' sel':''}" data-v="${k}">${WorkoutEngine.EQUIPMENT_PRESETS[k].label}</div>`
+  ).join('');
+
+  const timeOpts = TIMES.map(m =>
+    `<div class="opt${m===timeNow?' sel':''}" data-v="${m}">${m} min</div>`
+  ).join('') + `<div class="opt" data-v="">No limit</div>`;
+
+  const feelOpts = Object.keys(WorkoutEngine.READINESS_LEVELS).map(k =>
+    `<div class="opt${k==='fresh'?' sel':''}" data-v="${k}">${k.charAt(0).toUpperCase()+k.slice(1)}</div>`
+  ).join('');
+
+  const setup = `
+    <div class="setup">
+      <div class="lbl">Equipment available</div>
+      <div class="opts" data-g="equip">${eqOpts}</div>
+      <div class="lbl">How long today</div>
+      <div class="opts" data-g="time">${timeOpts}</div>
+      <div class="lbl">How you feel</div>
+      <div class="opts" data-g="feel">${feelOpts}</div>
+      <div class="setupfoot" id="setupfoot"></div>
+    </div>`;
+
+  document.getElementById('app').innerHTML =
+    card +
+    `<div class="ask">What are you training today?</div>` +
+    setup +
+    `<div style="margin-top:16px">${buttons}</div>`;
+
+  bindSetup();
+
+  const tg = document.getElementById('togW');
+  if(tg) tg.onclick = () => {
+    const w = document.getElementById('wt');
+    w.classList.toggle('show');
+    tg.textContent = w.classList.contains('show')
+      ? 'Hide the weights you logged'
+      : 'Show the weights you logged';
+  };
+
+  document.querySelectorAll('.daybtn').forEach(b => {
+    b.onclick = () => startDay(b.dataset.day);
+  });
+}
+
+const setup = { equip:'full', time:80, feel:'fresh' };
+
+function bindSetup(){
+  setup.equip = WorkoutEngine.matchingEquipmentPreset(STATE) || 'full';
+  setup.time  = [45,60,75,90].includes(STATE.timeBudget) ? STATE.timeBudget : 75;
+  setup.feel  = 'fresh';
+
+  document.querySelectorAll('.setup .opts').forEach(g => {
+    g.querySelectorAll('.opt').forEach(o => {
+      o.onclick = () => {
+        g.querySelectorAll('.opt').forEach(x => x.classList.remove('sel'));
+        o.classList.add('sel');
+        const v = o.dataset.v;
+        if(g.dataset.g === 'time')  setup.time  = v === '' ? null : Number(v);
+        if(g.dataset.g === 'equip') setup.equip = v;
+        if(g.dataset.g === 'feel')  setup.feel  = v;
+        setupSummary();
+      };
+    });
+  });
+  setupSummary();
+}
+
+function setupSummary(){
+  const el = document.getElementById('setupfoot');
+  if(!el) return;
+  const lvl = WorkoutEngine.READINESS_LEVELS[setup.feel];
+  const bits = [WorkoutEngine.EQUIPMENT_PRESETS[setup.equip].label];
+  bits.push(setup.time ? setup.time + ' minutes' : 'no time cap');
+  if(setup.feel !== 'fresh') bits.push(lvl.label.toLowerCase());
+  el.textContent = 'Building for: ' + bits.join(' · ') +
+    '. Anything you cannot use gets filtered out of the exercise pool.';
+}
+
+function startDay(dayType){
+  WorkoutEngine.setEquipmentPreset(STATE, setup.equip);
+  WorkoutEngine.setTimeBudget(STATE, setup.time);
+  STATE.current = WorkoutEngine.generateSession(
+    STATE, LIB, TPL, dayType, setup.feel, setup.time
+  );
+  WorkoutEngine.saveState(STATE);
+  window.scrollTo(0,0);
+  render();
+}
+
+function render(){
+  const s = STATE.current;
+  const label = TPL[s.dayType].label;
+  document.getElementById('dayTitle').textContent = label + ' Day';
+
+  let shoulderPill = '';
+  if(s.shoulderCarry === 'sore') shoulderPill = '<span class="pill warn">Shoulder sore: pressing dialed back</span>';
+  else if(s.shoulderCarry === 'minor') shoulderPill = '<span class="pill warn">Shoulder minor: overhead conservative</span>';
+
+  const totalSets = s.exercises.reduce((a,e)=>a + e.sets * (e.unilateralSplit?3:1),0);
+  const est = s.estimatedMinutes ? ` · ~${s.estimatedMinutes} min` : '';
+  const readyPill = (s.readiness && s.readiness !== 'fresh')
+    ? `<span class="pill warn">${WorkoutEngine.READINESS_LEVELS[s.readiness].label}</span>` : '';
+  document.getElementById('daySub').innerHTML =
+    `${s.variantName} · ${s.exercises.length} exercises · ${totalSets} sets${est} ${shoulderPill} ${readyPill}`;
+
+  const app = document.getElementById('app');
+  app.innerHTML = s.blocks.map((b,bi)=>{
+    const inner = b.exercises.map((e,ei)=>exCard(e,bi,ei)).join('');
+    const wrapped = b.superset
+      ? `<div class="superset"><div class="superset-tag">SUPERSET · no rest between</div>${inner}</div>`
+      : inner;
+    return `<div class="blocklabel">${b.label}</div>${wrapped}`;
+  }).join('') + logForm();
+
+  bindAll();
+}
+
+function exCard(e,bi,ei){
+  // Unilateral machines get three rows of bubbles: bilateral, right, left
+  const groups = e.unilateralSplit
+    ? [['Bilateral',e.sets],['Single R',3],['Single L',3]]
+    : [[null,e.sets]];
+
+  let idx = 0;
+  const bubbleHTML = groups.map(([gl,n])=>{
+    const row = Array.from({length:n},(_,i)=>{
+      const key = idx++;
+      const on = e.completed.includes(key) ? ' on' : '';
+      return `<div class="bub${on}" data-b="${bi}" data-e="${ei}" data-k="${key}">${i+1}</div>`;
+    }).join('');
+    return (gl?`<div class="lbl" style="margin-top:8px">${gl}</div>`:'') + `<div class="bubbles">${row}</div>`;
+  }).join('');
+
+  const done = e.completed.length;
+  const total = e.sets * (e.unilateralSplit?1:1) + (e.unilateralSplit?6:0);
+  const newTag = e.isNew ? '<span class="pill new">New</span>' : '';
+
+  return `
+  <div class="ex" data-card="${bi}-${ei}">
+    <div class="ex-head">
+      <div>
+        <div class="ex-name">${e.name}${newTag}</div>
+        <div class="ex-meta">${e.sets} × ${e.repRange} · ${e.rir==='failure'?'to failure':e.rir+' RIR'} · ${done}/${total} done</div>
+      </div>
+      <div class="chev">▶</div>
+    </div>
+    <div class="ex-body">
+      ${bubbleHTML}
+      <div class="note overload"><b>Overload</b>${e.overload}</div>
+      <div class="note"><b>Form cue</b>${e.cue}</div>
+      ${e.showVideo?`<a class="vid" href="${e.video}" target="_blank" rel="noopener">▶ Watch demo</a>`:''}
+      <div class="logrow">
+        <input placeholder="Weight (lb)" value="${e.loggedWeight}" data-w="${bi}-${ei}" inputmode="decimal">
+        <input placeholder="Top-set reps" value="${e.loggedReps}" data-r="${bi}-${ei}" inputmode="numeric">
+      </div>
+    </div>
+  </div>`;
+}
+
+function logForm(){
+  return `
+  <div class="logform">
+    <h3>Session Log</h3>
+    <div class="lbl">Rating</div>
+    <div class="opts" data-g="rating">
+      ${[1,2,3,4,5].map(n=>`<div class="opt" data-v="${n}">${n}</div>`).join('')}
+    </div>
+    <div class="lbl">Shoulder</div>
+    <div class="opts" data-g="shoulder">
+      ${[['good','All good'],['minor','Minor'],['sore','Sore']].map(([v,l])=>`<div class="opt" data-v="${v}">${l}</div>`).join('')}
+    </div>
+    <div class="lbl">Energy</div>
+    <div class="opts" data-g="energy">
+      ${[['low','Low'],['moderate','Moderate'],['high','High']].map(([v,l])=>`<div class="opt" data-v="${v}">${l}</div>`).join('')}
+    </div>
+    <div class="lbl">Notes</div>
+    <textarea id="notes" placeholder="What felt strong, what to change next time"></textarea>
+    <div style="margin-top:16px"><button class="primary" id="finish">Finish &amp; Save Session</button></div>
+    <div style="margin-top:9px"><button class="ghost" id="regen">Regenerate today's workout</button></div>
+    <div style="margin-top:9px"><button class="ghost" id="changeday">Pick a different day</button></div>
+  </div>`;
+}
+
+const picked = {};
+
+function bindAll(){
+  document.querySelectorAll('.ex-head').forEach(h=>{
+    h.onclick = ()=> h.parentElement.classList.toggle('open');
+  });
+
+  document.querySelectorAll('.bub').forEach(b=>{
+    b.onclick = ()=>{
+      const {b:bi,e:ei,k} = b.dataset;
+      const ex = STATE.current.blocks[bi].exercises[ei];
+      const key = Number(k);
+      const i = ex.completed.indexOf(key);
+      if(i>=0) ex.completed.splice(i,1); else ex.completed.push(key);
+      b.classList.toggle('on');
+      WorkoutEngine.saveState(STATE);
+      const meta = b.closest('.ex').querySelector('.ex-meta');
+      meta.textContent = meta.textContent.replace(/\d+\/(\d+) done/, ex.completed.length+'/$1 done');
+    };
+  });
+
+  document.querySelectorAll('[data-w]').forEach(inp=>{
+    inp.oninput = ()=>{
+      const [bi,ei] = inp.dataset.w.split('-');
+      STATE.current.blocks[bi].exercises[ei].loggedWeight = inp.value;
+      WorkoutEngine.saveState(STATE);
+    };
+  });
+  document.querySelectorAll('[data-r]').forEach(inp=>{
+    inp.oninput = ()=>{
+      const [bi,ei] = inp.dataset.r.split('-');
+      STATE.current.blocks[bi].exercises[ei].loggedReps = inp.value;
+      WorkoutEngine.saveState(STATE);
+    };
+  });
+
+  document.querySelectorAll('.opts').forEach(g=>{
+    g.querySelectorAll('.opt').forEach(o=>{
+      o.onclick = ()=>{
+        g.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+        o.classList.add('sel');
+        picked[g.dataset.g] = o.dataset.v;
+      };
+    });
+  });
+
+  document.getElementById('finish').onclick = ()=>{
+    if(!picked.rating || !picked.shoulder){
+      alert('Set at least a rating and shoulder status.');
+      return;
+    }
+    // sync exercises array with the edited block copies
+    STATE.current.exercises = STATE.current.blocks.flatMap(b=>b.exercises);
+    WorkoutEngine.completeSession(STATE, {
+      rating: picked.rating,
+      shoulder: picked.shoulder,
+      energy: picked.energy || 'moderate',
+      notes: document.getElementById('notes').value
+    });
+    alert('Saved. Next up: ' + TPL[WorkoutEngine.nextDayType(STATE,TPL)].label + ' day.');
+    location.reload();
+  };
+
+  document.getElementById('changeday').onclick = ()=>{
+    if(!confirm("Drop today's workout and go back to the day picker?")) return;
+    STATE.current = null;
+    WorkoutEngine.saveState(STATE);
+    window.scrollTo(0,0);
+    renderStart();
+  };
+
+  document.getElementById('regen').onclick = ()=>{
+    if(!confirm('Rebuild today with different exercises?')) return;
+    STATE.current = WorkoutEngine.generateSession(STATE, LIB, TPL, STATE.current.dayType);
+    WorkoutEngine.saveState(STATE);
+    render();
+  };
+}
+
+boot();
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
